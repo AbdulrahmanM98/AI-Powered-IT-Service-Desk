@@ -1,0 +1,357 @@
+{
+  "name": "IT Support - New Ticket",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "نموذج بلاغ تقني",
+        "formDescription": "الرجاء تعبئة النموذج بكل دقة ليتم التعامل مع بلاغك بأسرع وقت ممكن.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "اسم الموظف",
+              "fieldName": "employee_name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "البريد الإلكتروني",
+              "fieldType": "email",
+              "fieldName": "employee_email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "رقم TeamViewer الخاص بالجهاز",
+              "fieldName": "teamviewer_id",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "نوع المشكلة",
+              "fieldType": "dropdown",
+              "fieldName": "issue_type",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "إنترنت"
+                  },
+                  {
+                    "option": "شاشة"
+                  },
+                  {
+                    "option": "النظام"
+                  },
+                  {
+                    "option": "الطابعة"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "وصف المشكلة بالتفصيل",
+              "fieldType": "textarea",
+              "fieldName": "description",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "f80de3e5-eb5d-442b-b102-fee5ff1312c0",
+      "name": "New Ticket Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "8aea84eb-21f3-4da0-bca1-5c5204ea71de"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=نوع المشكلة: {{ $json.issue_type }}\nوصف الموظف للمشكلة: {{ $json.description }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "أنت محلل دعم تقني في شركة سعودية. مهمتك تحليل بلاغات الموظفين التقنية وإخراج: 1) priority: يجب أن تكون واحدة بالضبط من (Critical, High, Medium, Low) بناءً على مدى تأثير المشكلة على عمل الموظف وإلحاحها. اعتبر توقف كامل عن العمل أو انقطاع الإنترنت الكلي = Critical. مشكلة تعيق جزء كبير من العمل = High. مشكلة مزعجة لكن يمكن العمل معها = Medium. مشكلة بسيطة أو تجميلية = Low. 2) ai_summary: ملخص تقني دقيق وواضح بالعربية لمشكلة الموظف، بصيغة يفهمها فريق الدعم التقني مباشرة دون الحاجة لقراءة النص الأصلي."
+        }
+      },
+      "id": "21c7511d-23e2-404e-bbbd-e9c8de15cb52",
+      "name": "Classify Ticket (AI Agent)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        544,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "e6a81457-6f7e-4953-a097-a9da69923608",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{ \"priority\": \"Critical\", \"ai_summary\": \"وصف مختصر ودقيق للمشكلة التقنية مع السبب المحتمل\" }"
+      },
+      "id": "88649053-3ac9-4c98-bfc7-3439b0593edd",
+      "name": "Ticket Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output || {};\nconst priority = raw.priority || 'Medium';\nconst summary = raw.ai_summary || '';\n\nconst priorityMap = {\n  Critical: { hours: 1, labelAr: 'حرج', slaTextAr: 'خلال ساعة واحدة' },\n  High: { hours: 4, labelAr: 'عالي', slaTextAr: 'خلال 4 ساعات' },\n  Medium: { hours: 24, labelAr: 'متوسط', slaTextAr: 'خلال يوم عمل واحد' },\n  Low: { hours: 72, labelAr: 'منخفض', slaTextAr: 'خلال 3 أيام عمل' }\n};\n\nconst conf = priorityMap[priority] || priorityMap.Medium;\nconst now = new Date();\nconst deadline = new Date(now.getTime() + conf.hours * 60 * 60 * 1000);\nconst ticketId = 'TKT-' + now.getTime();\n\nreturn [{\n  json: {\n    ticket_id: ticketId,\n    priority: priority,\n    priority_ar: conf.labelAr,\n    sla_text_ar: conf.slaTextAr,\n    sla_deadline: deadline.toISOString(),\n    ai_summary: summary\n  }\n}];"
+      },
+      "id": "34eab5a2-999b-452e-98b2-b8275cb36928",
+      "name": "Calculate SLA & Ticket ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "IT_Support_Tickets"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ticket_id": "={{ $json.ticket_id }}",
+            "employee_name": "={{ $('New Ticket Form').item.json.employee_name }}",
+            "employee_email": "={{ $('New Ticket Form').item.json.employee_email }}",
+            "teamviewer_id": "={{ $('New Ticket Form').item.json.teamviewer_id }}",
+            "issue_type": "={{ $('New Ticket Form').item.json.issue_type }}",
+            "description": "={{ $('New Ticket Form').item.json.description }}",
+            "ai_summary": "={{ $json.ai_summary }}",
+            "priority": "={{ $json.priority }}",
+            "sla_deadline": "={{ $json.sla_deadline }}",
+            "status": "Open"
+          },
+          "schema": [
+            {
+              "id": "ticket_id",
+              "displayName": "ticket_id",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employee_name",
+              "displayName": "employee_name",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "employee_email",
+              "displayName": "employee_email",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "teamviewer_id",
+              "displayName": "teamviewer_id",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "issue_type",
+              "displayName": "issue_type",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ai_summary",
+              "displayName": "ai_summary",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sla_deadline",
+              "displayName": "sla_deadline",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7e0247b8-45a6-4b4d-bc90-55b2a8078b7a",
+      "name": "Save Ticket to Data Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1088,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "it.support@example.com",
+        "subject": "={{ 'تذكرة جديدة #' + $('Calculate SLA & Ticket ID').item.json.ticket_id + ' - أولوية: ' + $('Calculate SLA & Ticket ID').item.json.priority_ar }}",
+        "message": "={{ '<h3>تذكرة دعم فني جديدة</h3><p><b>رقم التذكرة:</b> ' + $('Calculate SLA & Ticket ID').item.json.ticket_id + '</p><p><b>الموظف:</b> ' + $('New Ticket Form').item.json.employee_name + '</p><p><b>الإيميل:</b> ' + $('New Ticket Form').item.json.employee_email + '</p><p><b>رقم TeamViewer:</b> ' + $('New Ticket Form').item.json.teamviewer_id + '</p><p><b>نوع المشكلة:</b> ' + $('New Ticket Form').item.json.issue_type + '</p><p><b>الأولوية:</b> ' + $('Calculate SLA & Ticket ID').item.json.priority_ar + '</p><p><b>الوقت المتوقع للرد:</b> ' + $('Calculate SLA & Ticket ID').item.json.sla_text_ar + '</p><p><b>تحليل الذكاء الاصطناعي:</b> ' + $('Calculate SLA & Ticket ID').item.json.ai_summary + '</p><p><b>وصف الموظف الأصلي:</b> ' + $('New Ticket Form').item.json.description + '</p>' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "b582fe39-84da-435c-946d-8d0d8e9334db",
+      "name": "Notify Tech Team",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        208
+      ],
+      "webhookId": "4b0926c4-b244-430f-b974-a5db3db5632d"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "تم استلام بلاغك بنجاح",
+        "completionMessage": "={{ 'رقم تذكرتك: ' + $('Calculate SLA & Ticket ID').item.json.ticket_id + '\\nالأولوية: ' + $('Calculate SLA & Ticket ID').item.json.priority_ar + '\\nالوقت المتوقع للرد: ' + $('Calculate SLA & Ticket ID').item.json.sla_text_ar + '\\nسيتم التواصل معك عبر الإيميل عند حل المشكلة.' }}",
+        "options": {}
+      },
+      "id": "12abb77b-cbf8-4cc2-ac36-2321c0fea8b6",
+      "name": "Employee Confirmation",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1312,
+        400
+      ],
+      "webhookId": "d78d67aa-322c-45db-b66d-667b0679cb5d"
+    }
+  ],
+  "connections": {
+    "New Ticket Form": {
+      "main": [
+        [
+          {
+            "node": "Classify Ticket (AI Agent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Ticket (AI Agent)": {
+      "main": [
+        [
+          {
+            "node": "Calculate SLA & Ticket ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Classify Ticket (AI Agent)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ticket Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Classify Ticket (AI Agent)",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate SLA & Ticket ID": {
+      "main": [
+        [
+          {
+            "node": "Save Ticket to Data Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Ticket to Data Table": {
+      "main": [
+        [
+          {
+            "node": "Notify Tech Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Employee Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "triggerCount": 1
+}
