@@ -1,0 +1,190 @@
+{
+  "name": "IT Support - Close Ticket",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "إغلاق تذكرة دعم فني",
+        "formDescription": "نموذج داخلي لفريق الدعم التقني لإغلاق التذاكر بعد حل المشكلة.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "رقم التذكرة",
+              "fieldName": "ticket_id",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "ملاحظات الحل",
+              "fieldType": "textarea",
+              "fieldName": "resolution_notes"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e6edbe6d-5bba-4160-a889-e737fa14a029",
+      "name": "Close Ticket Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "14b66311-aaa0-404f-b6c9-c1678bf1a94c"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "IT_Support_Tickets"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "ticket_id",
+              "keyValue": "={{ $json.ticket_id }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "f0e782d6-ac50-40d3-8b59-a8dce4271bfe",
+      "name": "Find Ticket",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "IT_Support_Tickets"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "ticket_id",
+              "keyValue": "={{ $json.ticket_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "Closed"
+          },
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6580ba2f-ced0-4d7d-bf8f-846f62a999e5",
+      "name": "Update Ticket Status",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Find Ticket').item.json.employee_email }}",
+        "subject": "={{ 'تم حل مشكلتك - تذكرة #' + $('Find Ticket').item.json.ticket_id }}",
+        "message": "={{ '<p>مرحبًا ' + $('Find Ticket').item.json.employee_name + '،</p><p>تم حل المشكلة المتعلقة بتذكرتك رقم <b>' + $('Find Ticket').item.json.ticket_id + '</b> بخصوص (' + $('Find Ticket').item.json.issue_type + ').</p><p><b>ملاحظات الحل:</b> ' + ($('Close Ticket Form').item.json.resolution_notes || 'لا يوجد') + '</p><p>شكرًا لتواصلك مع فريق الدعم الفني.</p>' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "acac9dca-014e-4f9a-bae8-984084d6083a",
+      "name": "Notify Employee - Ticket Closed",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        912,
+        208
+      ],
+      "webhookId": "bbaca22c-a62d-4ea8-99eb-37c25be02b23"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "تم إغلاق التذكرة",
+        "completionMessage": "={{ 'تم إغلاق التذكرة رقم ' + $('Find Ticket').item.json.ticket_id + ' وإشعار الموظف.' }}",
+        "options": {}
+      },
+      "id": "2967ee6c-3bb2-409a-8e30-62728af43da8",
+      "name": "Close Confirmation",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        912,
+        400
+      ],
+      "webhookId": "769068b8-be00-4bb8-a53b-22ef088e54cd"
+    }
+  ],
+  "connections": {
+    "Close Ticket Form": {
+      "main": [
+        [
+          {
+            "node": "Find Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Ticket": {
+      "main": [
+        [
+          {
+            "node": "Update Ticket Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Ticket Status": {
+      "main": [
+        [
+          {
+            "node": "Notify Employee - Ticket Closed",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Close Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "triggerCount": 1
+}
