@@ -1,4 +1,3 @@
-
 # AI-Powered IT Service Desk
 
 ### ITSM | AI Automation | n8n | MVP
@@ -9,7 +8,7 @@ The solution was developed using n8n, OpenAI, Gmail, and n8n Data Tables.
 
 **Project Type:** Personal MVP / Proof of Concept  
 **Pilot Scope:** Designed for 25 users  
-**Focus Area:** IT Service Management & Workflow Automation
+**Focus Area:** IT Service Management, AI-assisted ticket triage & workflow automation
 
 ---
 
@@ -30,7 +29,13 @@ Both workflows interact with a shared n8n Data Table.
 
 ---
 
-## 2. Problem Statement
+## 2. The Core Idea: AI That Understands the Employee's Problem
+
+The key feature is an **AI Agent that reads and interprets the employee's own description of a technical issue**. Rather than forwarding an unstructured message unchanged, the agent uses the issue category and description to suggest a severity level and produce a concise **Arabic technical summary** for IT staff.
+
+This is **AI-assisted triage**, not automatic diagnosis or resolution: a human support specialist still investigates and resolves the incident. The agent's classification depends on the quality of the information submitted.
+
+## 3. Problem Statement
 
 In smaller IT support environments, incidents may be reported through multiple communication channels, such as email, phone calls, and instant messaging.
 
@@ -46,7 +51,7 @@ The MVP explores how a centralized reporting form and automated ticket lifecycle
 
 ---
 
-## 3. Project Objectives
+## 4. Project Objectives
 
 The main objectives were to:
 
@@ -63,7 +68,7 @@ The solution was designed as a limited-scope MVP rather than a production-ready 
 
 ---
 
-## 4. My Role & Responsibilities
+## 5. My Role & Responsibilities
 
 **Role: MVP Developer | ITSM & Workflow Automation**
 
@@ -86,7 +91,7 @@ The project combines practical IT support knowledge with automation and AI capab
 
 ---
 
-## 5. MVP Scope
+## 6. MVP Scope
 
 The MVP was designed for a pilot group of 25 users.
 
@@ -117,7 +122,7 @@ These capabilities could be considered in future development phases.
 
 ---
 
-## 6. System Workflow
+## 7. System Workflow
 
 ### Workflow 1: New Ticket Registration
 
@@ -156,9 +161,9 @@ The workflow:
 
 ---
 
-## 7. AI-Based Ticket Classification
+## 8. AI-Based Ticket Classification
 
-The solution uses an OpenAI model integrated into n8n to analyze employee-reported incidents.
+The solution uses an OpenAI GPT-4o mini model integrated into n8n to analyze employee-reported incidents. Its structured output contains `priority` and `ai_summary`, the latter a concise Arabic summary for the support team.
 
 The AI Agent classifies tickets into four priority levels:
 
@@ -169,7 +174,7 @@ The AI Agent classifies tickets into four priority levels:
 | Medium | 24 hours |
 | Low | 72 hours |
 
-These values represent configurable targets used in the MVP.
+These values represent configurable targets used in the MVP. The current calculation adds elapsed hours rather than business-calendar hours.
 
 The current implementation calculates deadlines using elapsed hours. Business-hour calendars and advanced SLA monitoring are outside the initial scope.
 
@@ -177,7 +182,7 @@ AI classification is based on the information submitted by the employee and shou
 
 ---
 
-## 8. Technology Stack
+## 9. Technology Stack
 
 | Technology | Purpose |
 |---|---|
@@ -190,23 +195,36 @@ AI classification is based on the information submitted by the employee and shou
 
 ---
 
-## 9. Workflow Screenshots
+## 10. Importing the Demo Workflows
 
-### New Ticket Workflow
+- [New Ticket workflow](workflows/new-ticket-workflow.json)
+- [Close Ticket workflow](workflows/close-ticket-workflow.json)
+- [Required Data Table structure](docs/data-table-setup.md)
 
-_Add workflow screenshot here._
+To recreate the demo, create the `IT_Support_Tickets` Data Table, import both workflow JSON files, connect your **own** OpenAI and Gmail credentials, then replace the example IT inbox address in the new-ticket workflow. The JSON exports contain no live credentials or personal mailbox address. They are portfolio examples, not a ready-to-deploy production service.
 
-### Ticket Closure Workflow
+## 11. Workflow Screenshots
 
-_Add workflow screenshot here._
+The screenshots are being prepared for publication. The workflow JSON files and table schema are available above.
 
-### Employee Incident Form
+### Ticket lifecycle
 
-_Add form screenshot here if available._
+```mermaid
+flowchart LR
+A[Employee incident form] --> B[AI Agent: analyze description]
+B --> C[Priority and Arabic summary]
+C --> D[Ticket ID and SLA target]
+D --> E[(Shared Data Table)]
+E --> F[Notify IT team]
+E --> G[Employee confirmation]
+H[IT closure form] --> I[Find ticket by ID]
+I --> J[Update status: Closed]
+J --> K[Email employee]
+```
 
 ---
 
-## 10. MVP Limitations
+## 12. MVP Limitations
 
 The solution was developed as a proof of concept to explore automation opportunities in IT support.
 
@@ -224,7 +242,7 @@ The MVP provides a foundation for further experimentation and development.
 
 ---
 
-## 11. Future Improvements
+## 13. Future Improvements
 
 Potential future enhancements include:
 
@@ -239,7 +257,7 @@ Potential future enhancements include:
 
 ---
 
-## 12. Skills Demonstrated
+## 14. Skills Demonstrated
 
 - IT Service Management
 - Incident Management
@@ -260,4 +278,4 @@ This project is a personal MVP designed to demonstrate IT support automation con
 
 The 25-user figure represents the intended pilot scope, not a claim of measured production adoption.
 
-The repository contains a portfolio demonstration of the workflow design. Credentials, personal information, and sensitive configuration details are excluded.
+The repository contains a portfolio demonstration of the workflow design. Live credential bindings and the original personal IT inbox address have been removed from the published workflow exports. Sample email addresses are placeholders; please configure your own before running.
