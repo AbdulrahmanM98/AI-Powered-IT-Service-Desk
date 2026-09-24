@@ -174,9 +174,7 @@ The AI Agent classifies tickets into four priority levels:
 | Medium | 24 hours |
 | Low | 72 hours |
 
-These values represent configurable targets used in the MVP. The current calculation adds elapsed hours rather than business-calendar hours.
-
-The current implementation calculates deadlines using elapsed hours. Business-hour calendars and advanced SLA monitoring are outside the initial scope.
+These values represent configurable targets used in the MVP. The current implementation calculates deadlines using elapsed hours rather than business-calendar hours; advanced SLA monitoring is outside the initial scope.
 
 AI classification is based on the information submitted by the employee and should not be treated as a verified technical diagnosis.
 
@@ -205,7 +203,29 @@ To recreate the demo, create the `IT_Support_Tickets` Data Table, import both wo
 
 ## 11. Workflow Screenshots
 
-The screenshots are being prepared for publication. The workflow JSON files and table schema are available above.
+### 1. Employee incident submission form
+
+The employee describes the issue in their own words; the AI Agent uses that description to classify and summarize the ticket.
+
+![Employee incident form](01_form_page.png)
+
+### 2. Ticket submission confirmation
+
+The employee sees a ticket reference, priority, and response target after submitting the form.
+
+![Ticket submission confirmation](02_Ticket_done.png)
+
+### 3. New ticket and AI analysis workflow
+
+The AI Agent interprets the reported problem, suggests a priority, and produces a technical summary before the ticket is saved and the IT team is notified.
+
+![New ticket and AI analysis workflow](03_send_flow.png)
+
+### 4. Ticket closure workflow
+
+The IT team looks up the ticket, marks it closed, and triggers an employee notification.
+
+![Ticket closure workflow](04_close_flow.png)
 
 ### Ticket lifecycle
 
